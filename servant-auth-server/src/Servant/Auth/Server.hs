@@ -141,6 +141,13 @@ module Servant.Auth.Server
 import Prelude hiding                           (readFile, writeFile)
 import Data.ByteString                          (ByteString, writeFile, readFile)
 import Data.Default.Class                       (Default (def))
+import qualified Data.ByteString              as BS
+import qualified Data.ByteString.Builder      as BS
+import qualified Data.ByteString.Lazy         as LBS
+import           Data.Text.Encoding           (decodeUtf8', decodeUtf8With,
+                                               encodeUtf8)
+import           Data.Text.Encoding.Error     (lenientDecode)
+import Servant.API (ToHttpApiData, toUrlPiece, toHeader)
 import Servant.Auth
 import Servant.Auth.Server.Internal             ()
 import Servant.Auth.Server.Internal.BasicAuth
@@ -153,7 +160,7 @@ import Servant.Auth.Server.Internal.Types
 
 import Crypto.JOSE as Jose
 import Servant     (BasicAuthData (..))
-import Web.Cookie  (SetCookie)
+import Web.Cookie  (SetCookie, renderSetCookie)
 
 -- | Generate a key suitable for use with 'defaultConfig'.
 generateKey :: IO Jose.JWK
@@ -176,3 +183,8 @@ writeKey fp = writeFile fp =<< generateSecret
 -- | Reads a key from a file.
 readKey :: FilePath -> IO Jose.JWK
 readKey fp = fromSecret <$> readFile fp
+
+instance ToHttpApiData SetCookie where
+  toUrlPiece = decodeUtf8With lenientDecode . toHeader
+  toHeader = LBS.toStrict . BS.toLazyByteString . renderSetCookie
+  -- toEncodedUrlPiece = renderSetCookie -- doesn't do things.

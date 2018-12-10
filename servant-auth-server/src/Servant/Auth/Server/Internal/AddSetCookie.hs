@@ -10,7 +10,9 @@ import           Data.Tagged              (Tagged (..))
 import qualified Network.HTTP.Types       as HTTP
 import           Network.Wai              (mapResponseHeaders)
 import           Servant
+import           Servant.API.WebSocket
 import           Web.Cookie
+
 
 -- What are we doing here? Well, the idea is to add headers to the response,
 -- but the headers come from the authentication check. In order to do that, we
@@ -37,6 +39,9 @@ type instance AddSetCookieApi (Verb method stat ctyps a)
   = Verb method stat ctyps (AddSetCookieApiVerb a)
 type instance AddSetCookieApi Raw = Raw
 type instance AddSetCookieApi (Headers hs a) = AddSetCookieApiVerb (Headers hs a)
+type instance AddSetCookieApi WebSocket = WebSocket
+instance AddSetCookies ('S n) (m ()) (m ()) where
+  addSetCookies _ a = a
 
 data SetCookieList (n :: Nat) :: * where
   SetCookieNil :: SetCookieList 'Z
